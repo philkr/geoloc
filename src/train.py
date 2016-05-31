@@ -93,13 +93,12 @@ def getNumGPU():
 
 def main():
 	from argparse import ArgumentParser
-	import tensorflow as tf
 	from time import time
 
 	parser = ArgumentParser()
-	parser.add_argument('--batch_size', type=int, default=32, help='batch size')
-	parser.add_argument('--lr', type=float, default=1e-4, help='learning rate')
-	parser.add_argument('--nit', type=int, default=1000000, help='number of iterations')
+	parser.add_argument('-bs', '--batch-size', type=int, default=32, help='batch size')
+	parser.add_argument('-lr', '--learning-rate', type=float, default=1e-4, help='learning rate')
+	parser.add_argument('-nit','--number-of-iterations', type=int, default=1000000, help='number of iterations')
 	parser.add_argument('--log_device_placement', action='store_true')
 	parser.add_argument('--file-list', type=str, default='/fastdata/finder/streetview_train.txt', help='path to the streetview training file')
 	parser.add_argument('--file-base-dir', type=str, default='/fastdata/finder/streetview/', help='directory of the training images')
@@ -127,6 +126,9 @@ def main():
 
 	files = [os.path.join(args.file_base_dir,l.strip()) for l in open(args.file_list,'r')]
 
+	# Fire up tensorflow
+	import tensorflow as tf
+	
 	# Detect the number of GPUs
 	if args.num_gpus < 0:
 		args.num_gpus = getNumGPU()
@@ -139,7 +141,7 @@ def main():
 	data,gt = glocData(files, cluster_file, batch_size=total_batch_size)
 	
 	# Setup the solver
-	solver = tf.train.AdamOptimizer(learning_rate=args.lr)
+	solver = tf.train.AdamOptimizer(learning_rate=args.learning_rate)
 	
 	# Setup the network and loss
 	if args.num_gpus != 1:
@@ -208,13 +210,23 @@ def main():
 	with tf.Session(config=tf.ConfigProto(log_device_placement=args.log_device_placement, gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.6))) as sess:
 		# Initialize stuff
 		summary_writer = tf.train.SummaryWriter(args.train_dir, sess.graph)
-		tf.train.start_queue_runners(sess=sess)
+		
+		global coord
+		coord = tf.train.Coordinator()
+		import signal
+		def stop(*args):
+			global coord
+			print("Training stopped")
+			coord.request_stop()
+		old_sigint = signal.signal(signal.SIGINT, stop)
+
+		threads=tf.train.start_queue_runners(sess=sess, coord=coord)
 		sess.run(init_op)
 		sess.run(load_op)
-	
+		
 		# Train
 		loss_values = []
-		for it in range(args.nit):
+		for it in range(args.number_of_iterations):
 			t0 = time()
 			_, loss_value = sess.run([solver_step, loss])
 			t1 = time()
@@ -228,7 +240,11 @@ def main():
 				summary_writer.add_summary(summary_str, it)
 			if it % 1000 == 0:
 				saver.save(sess, os.path.join(args.train_dir, 'snap.ckpt'), global_step=it)
+			if coord.should_stop():
+				break
 		saver.save(sess, os.path.join(args.train_dir, 'final.ckpt'))
-
+		
+		coord.join(threads)
+		signal.signal(signal.SIGINT, old_sigint)
 if __name__ == "__main__":
 	main()

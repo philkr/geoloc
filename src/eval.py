@@ -18,8 +18,8 @@ def main():
 	parser = ArgumentParser()
 	parser.add_argument('--batch_size', type=int, default=32, help='batch size')
 	parser.add_argument('-n', type=int, default=None, help='Number of images to evaluate on')
-	parser.add_argument('--file-list', type=str, default='/fastdata/finder/streetview_test.txt', help='path to the streetview training file')
-	parser.add_argument('--file-base-dir', type=str, default='/fastdata/finder/streetview/', help='directory of the training images')
+	parser.add_argument('--file-list', type=str, default='/fastdata/finder/streetview_test.txt', help='path to the streetview test file')
+	parser.add_argument('--file-base-dir', type=str, default='/fastdata/finder/streetview/', help='directory of the test images')
 	parser.add_argument('train_dir', help='training directory')
 	args = parser.parse_args()
 
