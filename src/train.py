@@ -98,7 +98,8 @@ def main():
 	parser.add_argument('--log_device_placement', action='store_true')
 	parser.add_argument('--file-list', type=str, default='/fastdata/finder/streetview_train.txt', help='path to the streetview training file')
 	parser.add_argument('--file-base-dir', type=str, default='/fastdata/finder/streetview/', help='directory of the training images')
-	parser.add_argument('--clusters', type=str, default='/fastdata/finder/cluster.npy', help='cluster file (computed with cluster.py)')
+	parser.add_argument('--clusters', type=str, default=None, help='cluster file (computed with cluster.py)')
+	parser.add_argument('-n', '--n-clusters', type=int, default=None, help='Number of clusters to be used (if \'--clusters\' is not specified)')
 	parser.add_argument('--initial-weights', type=str, help='VGG weights in hdf5 format')
 	parser.add_argument('--num-gpus', type=int, default=1, help='How many GPUs should we use? (-1 for all available GPUs)')
 	parser.add_argument('train_dir', help='output directory for the model and log files')
@@ -106,6 +107,17 @@ def main():
 
 	try: os.makedirs(args.train_dir)
 	except: pass
+	cluster_file = args.train_dir+'clusters.npy'
+
+	if args.clusters:
+		import shutil
+		shutil.copyfile(args.clusters, cluster_file)
+		if args.n_clusters is not None:
+			print( 'Warning clusters and n_clusters both specified! Ignoring n_clusters.' )
+	elif not os.path.exists(cluster_file):
+		print( 'No cluster file provided, clustering (this might take a while)' )
+		from cluster import cluster
+		cluster(args.file_list, cluster_file, args.n_clusters)
 
 	files = [os.path.join(args.file_base_dir,l.strip()) for l in open(args.file_list,'r')]
 
@@ -118,7 +130,7 @@ def main():
 	# Get the data
 	gpu_batch_size = (args.batch_size-1) // args.num_gpus + 1
 	total_batch_size = gpu_batch_size * args.num_gpus
-	data,gt = glocData(files, args.clusters, batch_size=total_batch_size)
+	data,gt = glocData(files, cluster_file, batch_size=total_batch_size)
 	
 	# Setup the solver
 	solver = tf.train.AdamOptimizer(learning_rate=args.lr)

@@ -13,25 +13,28 @@ def main():
 	from glob import glob
 	from time import time
 	import random
+	import tensorflow as tf
 
 	parser = ArgumentParser()
 	parser.add_argument('--batch_size', type=int, default=32, help='batch size')
-	parser.add_argument('-n', type=int, default=10000, help='number of iterations')
+	parser.add_argument('-n', type=int, default=None, help='Number of images to evaluate on')
+	parser.add_argument('--file-list', type=str, default='/fastdata/finder/streetview_test.txt', help='path to the streetview training file')
+	parser.add_argument('--file-base-dir', type=str, default='/fastdata/finder/streetview/', help='directory of the training images')
 	parser.add_argument('train_dir', help='training directory')
 	args = parser.parse_args()
 
+	cluster_file = args.train_dir+'clusters.npy'
 	FINDER_DIR='/fastdata/finder/'
 	IMAGE_PATH=FINDER_DIR+'flickr/'
-	files = [IMAGE_PATH+l.strip() for l in open(FINDER_DIR+'/flickr_images.txt','r')]
-# 	IMAGE_PATH=FINDER_DIR+'streetview/'
-# 	files = [IMAGE_PATH+l.strip() for l in open(FINDER_DIR+'/images.txt','r')]
+	files = [os.path.join(args.file_base_dir,l.strip()) for l in open(args.file_list,'r')]
+
 	random.shuffle(files)
 	if args.n:
 		files = files[:args.n]
 	args.n = len(files)
 	
 	# Setup the graph
-	data,gt = glocData(files, FINDER_DIR+'cluster.npy', batch_size=args.batch_size)
+	data,gt = glocData(files, cluster_file, batch_size=args.batch_size)
 
 	vgg = vgg16(data)
 	avg_vgg = tf.reduce_mean(tf.reduce_mean(vgg,1),1)
