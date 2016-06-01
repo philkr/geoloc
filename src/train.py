@@ -46,6 +46,11 @@ def parseCoord(filename):
 	return lt,ln
 
 
+def getNCluster(cluster_file):
+	bm_param, km_param = np.load(cluster_file)
+	return km_param.shape[0]
+
+
 def coordToCluster(lat,lon,cluster_file):
 	import tensorflow as tf
 	# Setup the basemap and cluster
@@ -118,6 +123,7 @@ def main():
 		print( 'No cluster file provided, clustering (this might take a while)' )
 		from cluster import cluster
 		cluster(args.file_list, cluster_file, args.n_clusters)
+	args.n_clusters = getNCluster(cluster_file)
 
 	files = [os.path.join(args.file_base_dir,l.strip()) for l in open(args.file_list,'r')]
 
@@ -145,7 +151,7 @@ def main():
 		for i,(d,g) in enumerate(zip(split_data,split_gt)):
 			with tf.device('/gpu:%d'%i) as dev:
 				# Define VGG
-				vgg = vgg16(d)
+				vgg = vgg16(d, n_out=args.n_clusters)
 				
 				# Share the parameters
 				tf.get_variable_scope().reuse_variables()
@@ -167,7 +173,7 @@ def main():
 		grads_and_vars = list(zip(grads, vars))
 		loss = tf.add_n(all_loss) / len(all_loss)
 	else:
-		vgg = vgg16(data)
+		vgg = vgg16(data, n_out=args.n_clusters)
 		avg_vgg = tf.reduce_mean(tf.reduce_mean(vgg,1),1)
 		loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(avg_vgg, gt))
 		grads_and_vars = solver.compute_gradients(loss)

@@ -35,8 +35,9 @@ def main():
 	
 	# Setup the graph
 	data,gt = glocData(files, cluster_file, batch_size=args.batch_size)
+	n_clusters = getNCluster(cluster_file)
 
-	vgg = vgg16(data)
+	vgg = vgg16(data, n_out=n_clusters)
 	avg_vgg = tf.reduce_mean(tf.reduce_mean(vgg,1),1)
 	
 	pred = tf.argmax(avg_vgg,dimension=1)
