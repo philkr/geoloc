@@ -24,8 +24,6 @@ def main():
 	args = parser.parse_args()
 
 	cluster_file = args.train_dir+'clusters.npy'
-	FINDER_DIR='/fastdata/finder/'
-	IMAGE_PATH=FINDER_DIR+'flickr/'
 	files = [os.path.join(args.file_base_dir,l.strip()) for l in open(args.file_list,'r')]
 
 	random.shuffle(files)
