@@ -13,14 +13,14 @@ Tested on Ubuntu 16.04 and Mac OS X 10.10. Windows is not recommended.
 
 ## Evaluation
 ### Data setup
-Follow the training data setup detailed below, or download just the test data from [here](https://drive.google.com/folderview?id=0B9Rfwa3xKC_rWDVDZGZmWFJNbDA) and store it in `$DARA_DIR`.
+Follow the training data setup detailed below, or download just the test data from [here](https://drive.google.com/folderview?id=0B9Rfwa3xKC_rWDVDZGZmWFJNbDA) and store it in `$DATA_DIR`.
 
 ### Models
 Feel free to train your own geolocation models (as shown below), or simply download the pre-trained ones from [here](https://drive.google.com/folderview?id=0B9Rfwa3xKC_rWDVDZGZmWFJNbDA).
 
 ### Running the evaluation
 ```bash
-python3 src/eval.py --file-list $DARA_DIR/streetview_test.txt --file-base-dir $DARA_DIR/streetview/ path/to/model/
+python3 src/eval.py --file-list $DATA_DIR/streetview_test.txt --file-base-dir $DATA_DIR/streetview/ path/to/model/
 ```
 
 You should see an output as follows (for the 100 class model)
@@ -36,7 +36,7 @@ The list in the end measures the top-n accuracy for n from 1 to `n_clusters`.
 Follow the data and model setup for evaluation.
 ### Running the web ui
 ```bash
-python3 www/server.py --file-list $DARA_DIR/streetview_test.txt --file-base-dir $DARA_DIR/streetview/ path/to/model/ --use-gpu
+python3 www/server.py --file-list $DATA_DIR/streetview_test.txt --file-base-dir $DATA_DIR/streetview/ path/to/model/ --use-gpu
 ```
 Remove the `--use-gpu` flag if you want all computations to be on the CPU.
 
